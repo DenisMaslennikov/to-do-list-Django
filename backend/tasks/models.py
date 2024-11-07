@@ -7,7 +7,7 @@ from core.models import UUIDPrimaryKeyMixin
 User = get_user_model()
 
 
-class Task(models.Model, UUIDPrimaryKeyMixin):
+class Task(UUIDPrimaryKeyMixin, models.Model):
     """Модель задачи."""
 
     title = models.CharField(max_length=100, help_text="Заголовок задачи")

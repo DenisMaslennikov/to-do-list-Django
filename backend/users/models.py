@@ -1,4 +1,3 @@
-
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
@@ -32,7 +31,7 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 
-class User(AbstractBaseUser, PermissionsMixin, UUIDPrimaryKeyMixin):
+class User(UUIDPrimaryKeyMixin, AbstractBaseUser, PermissionsMixin):
     """Модель пользователя."""
 
     email = models.EmailField(unique=True, help_text="Адрес почты")
