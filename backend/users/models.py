@@ -1,4 +1,3 @@
-import uuid
 
 from django.contrib.auth.models import (
     AbstractBaseUser,
@@ -6,6 +5,8 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 from django.db import models
+
+from core.models import UUIDPrimaryKeyMixin
 
 # Create your models here.
 
@@ -31,17 +32,16 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 
-class User(AbstractBaseUser, PermissionsMixin):
+class User(AbstractBaseUser, PermissionsMixin, UUIDPrimaryKeyMixin):
     """Модель пользователя."""
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, help_text="")
-    email = models.EmailField(unique=True)
-    first_name = models.CharField(max_length=30, blank=True)
-    last_name = models.CharField(max_length=30, blank=True)
-    middle_name = models.CharField(max_length=30, blank=True)
-    username = models.CharField(max_length=30, unique=True)
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
+    email = models.EmailField(unique=True, help_text="Адрес почты")
+    first_name = models.CharField(max_length=30, blank=True, null=True, help_text="Имя")
+    last_name = models.CharField(max_length=30, blank=True, null=True, help_text="Фамилия")
+    middle_name = models.CharField(max_length=30, blank=True, null=True, help_text="Отчество")
+    username = models.CharField(max_length=30, unique=True, help_text="Имя пользователя")
+    is_active = models.BooleanField(default=True, help_text="Пользователь активен")
+    is_staff = models.BooleanField(default=False, help_text="Пользователь является персоналом")
 
     objects = CustomUserManager()
 
