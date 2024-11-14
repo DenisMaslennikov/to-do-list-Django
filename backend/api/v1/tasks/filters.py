@@ -5,6 +5,7 @@ from tasks.models import Task
 
 
 class TaskFilter(FilterSet):
+    """Класс с настройками фильтрации для API задач."""
     task_status = ModelChoiceFilter(queryset=TaskStatus.objects.all())
     created_at = IsoDateTimeFromToRangeFilter(field_name="created_at")
     updated_at = IsoDateTimeFromToRangeFilter()
@@ -12,5 +13,6 @@ class TaskFilter(FilterSet):
     completed_at = IsoDateTimeFromToRangeFilter()
 
     class Meta:
+        """Метаклас настроек класса фильтра."""
         model = Task
         fields = ("task_status", "created_at", "updated_at", "complete_before", "completed_at")
