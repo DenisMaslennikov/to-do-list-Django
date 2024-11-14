@@ -9,4 +9,6 @@ class UUIDPrimaryKeyMixin(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, help_text="Идентификатор")
 
     class Meta:
+        """Метакласс модели."""
+
         abstract = True

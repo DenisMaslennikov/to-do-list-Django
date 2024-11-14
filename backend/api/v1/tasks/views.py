@@ -1,12 +1,12 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
-from rest_framework import viewsets, permissions, status, filters
+from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from api.v1.tasks.filters import TaskFilter
 from api.v1.tasks.permissions import IsTaskOwnerOrForbidden
-from api.v1.tasks.serializers import TaskSerializer, TaskStatusUpdateSerializer, TaskListSerializer, TaskWriteSerializer
+from api.v1.tasks.serializers import TaskListSerializer, TaskSerializer, TaskStatusUpdateSerializer, TaskWriteSerializer
 from tasks.models import Task
 
 
@@ -15,14 +15,10 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     permission_classes = [IsTaskOwnerOrForbidden, permissions.IsAuthenticated]
     filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
-    # filterset_fields = ("created_at", "updated_at", "complete_before", "completed_at", "task_status")
     search_fields = ("title", "description")
     ordering = ("-created_at",)
     ordering_fields = "__all__"
     filterset_class = TaskFilter
-
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         """Получение кверисета с фильтрацией по пользователю."""

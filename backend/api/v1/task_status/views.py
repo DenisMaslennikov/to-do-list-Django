@@ -1,4 +1,4 @@
-from rest_framework import mixins, viewsets, permissions
+from rest_framework import mixins, permissions, viewsets
 
 from api.v1.task_status.serializers import TaskStatusSerializer
 from classifiers.models import TaskStatus
