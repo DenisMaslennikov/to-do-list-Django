@@ -166,15 +166,3 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
-
-SWAGGER_SETTINGS = {
-    "SECURITY_DEFINITIONS": {
-        "Bearer": {
-            "type": "apiKey",
-            "in": "header",
-            "name": "Authorization",
-            "description": "Add 'Bearer ' before your token",
-        }
-    },
-    "USE_SESSION_AUTH": False,  # отключить авторизацию по сессии, если используете токены
-}

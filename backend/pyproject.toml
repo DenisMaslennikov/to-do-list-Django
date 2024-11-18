@@ -23,6 +23,7 @@ django-debug-toolbar = "^4.4.6"
 ruff = "^0.7.2"
 pytest-django = "^4.9.0"
 pytest = "^8.3.3"
+faker = "^33.0.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -188,3 +189,8 @@ multiline-quotes = "single"
 [tool.black]
 line-length = 120
 target-version = ["py312"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "to_do_list.settings"
+addopts = "-vv --disable-warnings"
+python_files = "test_*.py"
