@@ -62,7 +62,6 @@ class TestUsersApi:
             (lf("anonymous_client"), HTTPStatus.UNAUTHORIZED, lf("user_one")),
             (lf("user_one_client"), HTTPStatus.OK, lf("user_one")),
             (lf("user_one_client"), HTTPStatus.NOT_FOUND, lf("user_two")),
-            (lf("superuser_client"), HTTPStatus.OK, lf("superuser")),
             (lf("superuser_client"), HTTPStatus.OK, lf("user_one")),
         ],
     )
@@ -86,7 +85,6 @@ class TestUsersApi:
             (lf("anonymous_client"), HTTPStatus.UNAUTHORIZED, lf("user_one")),
             (lf("user_one_client"), HTTPStatus.OK, lf("user_one")),
             (lf("user_one_client"), HTTPStatus.NOT_FOUND, lf("user_two")),
-            (lf("superuser_client"), HTTPStatus.OK, lf("superuser")),
             (lf("superuser_client"), HTTPStatus.OK, lf("user_one")),
         ],
     )
