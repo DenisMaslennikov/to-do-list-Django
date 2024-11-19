@@ -40,6 +40,9 @@ class TestUsersApi:
             "username": faker.unique.user_name(),
             "email": faker.unique.email(),
             "password": faker.password(),
+            "first_name": faker.first_name(),
+            "last_name": faker.last_name(),
+            "middle_name": faker.middle_name(),
         }
         response = anonymous_client.post("/api/v1/users/", payload)
         json = response.json()
@@ -49,3 +52,28 @@ class TestUsersApi:
         assert user_from_db is not None, "Пользователь не найден в базе данных"
         assert user_from_db.username == payload["username"], "Username пользователя не совпадает"
         assert user_from_db.email == payload["email"], "Email пользователя не совпадает"
+        assert user_from_db.first_name == payload["first_name"], "Имя пользователя не совпадает"
+        assert user_from_db.last_name == payload["last_name"], "Фамилия пользователя не совпадает"
+        assert user_from_db.middle_name == payload["middle_name"], "Отчество пользователя не совпадает"
+
+    @pytest.mark.parametrize(
+        ("client", "expected_status_code", "user"),
+        [
+            (lf("anonymous_client"), HTTPStatus.UNAUTHORIZED, lf("user_one")),
+            (lf("user_one_client"), HTTPStatus.OK, lf("user_one")),
+            (lf("superuser_client"), HTTPStatus.OK, lf("superuser")),
+        ],
+    )
+    def test_get_user_by_id_self_id(self, client: APIClient, expected_status_code: int, user: User) -> None:
+        """Проверяет получение пользователем по id самого себя."""
+        response = client.get(f"/api/v1/users/{user.id}/")
+
+        assert response.status_code == expected_status_code, "Код ответа отличается от ожидаемого"
+        if expected_status_code == HTTPStatus.OK:
+            json = response.json()
+            assert json["id"] == str(user.id), "Идентификатор пользователя не совпадает"
+            assert json["username"] == user.username, "Username пользователя не совпадает"
+            assert json["email"] == user.email, "Email пользователя не совпадает"
+            assert json["first_name"] == user.first_name, "Имя пользователя не совпадает"
+            assert json["last_name"] == user.last_name, "Фамилия пользователя не совпадает"
+            assert json["middle_name"] == user.middle_name, "Отчество пользователя не совпадает"
