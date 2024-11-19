@@ -1,6 +1,5 @@
 from http import HTTPStatus
 import random
-from pprint import pprint
 from tkinter.constants import NORMAL
 
 import pytest
@@ -96,7 +95,6 @@ class TestUsersApi:
         payload = {
             "username": faker.unique.user_name(),
             "email": faker.unique.email(),
-            "password": faker.password(),
             "first_name": faker.first_name(),
             "last_name": faker.last_name(),
             "middle_name": faker.middle_name(),
@@ -129,7 +127,6 @@ class TestUsersApi:
         payload = {
             "username": faker.unique.user_name(),
             "email": faker.unique.email(),
-            "password": faker.password(),
             "first_name": faker.first_name(),
             "last_name": faker.last_name(),
             "middle_name": faker.middle_name(),
@@ -168,9 +165,6 @@ class TestUsersApi:
         payload = {"current_password": password}
 
         response = client.delete(f"/api/v1/users/{user.id}/", payload)
-
-        if expected_status_code != HTTPStatus.NO_CONTENT:
-            pprint(response.json())
 
         assert response.status_code == expected_status_code
 
@@ -213,7 +207,6 @@ class TestUsersApi:
         payload = {
             "username": faker.unique.user_name(),
             "email": faker.unique.email(),
-            "password": faker.password(),
             "first_name": faker.first_name(),
             "last_name": faker.last_name(),
             "middle_name": faker.middle_name(),
@@ -237,14 +230,13 @@ class TestUsersApi:
             (lf("user_one_client"), HTTPStatus.OK, lf("user_one")),
         ],
     )
-    def test_partial_update_user_by_id(
-        self, client: APIClient, expected_status_code: int, user: User | None, faker: Faker
+    def test_partial_update_user_me(
+        self, client: APIClient, expected_status_code: int, user: User | None, faker: Faker, user_one_password: str
     ) -> None:
         """Частичное обновление информации о текущем пользователе."""
         payload = {
             "username": faker.unique.user_name(),
             "email": faker.unique.email(),
-            "password": faker.password(),
             "first_name": faker.first_name(),
             "last_name": faker.last_name(),
             "middle_name": faker.middle_name(),
@@ -275,7 +267,7 @@ class TestUsersApi:
             (lf("user_one_client"), HTTPStatus.NO_CONTENT, lf("user_one"), lf("user_one_password")),
         ],
     )
-    def test_delete_user_by_id(
+    def test_delete_user_me(
         self, client: APIClient, expected_status_code: int, user: User | None, password: str
     ) -> None:
         """Удаление текущего пользователя."""
@@ -284,11 +276,33 @@ class TestUsersApi:
 
         response = client.delete(f"/api/v1/users/me/", payload)
 
-        if expected_status_code != HTTPStatus.NO_CONTENT:
-            pprint(response.json())
-
         assert response.status_code == expected_status_code
 
         if expected_status_code == HTTPStatus.NO_CONTENT:
             user_from_db = User.objects.filter(id=user.id).first()
             assert user_from_db is None, "Пользователь не удален из базы данных"
+
+    @pytest.mark.parametrize(
+        ("client", "expected_status_code", "user", "password"),
+        [
+            (lf("anonymous_client"), HTTPStatus.UNAUTHORIZED, None, ""),
+            (lf("user_one_client"), HTTPStatus.NO_CONTENT, lf("user_one"), lf("user_one_password")),
+        ],
+    )
+    def test_set_password(
+        self, client: APIClient, expected_status_code: int, user: User | None, password: str, faker: Faker
+    ) -> None:
+        """Изменение пароля текущего пользователя."""
+
+        payload = {
+            "current_password": password,
+            "new_password": faker.password(),
+        }
+
+        response = client.post(f"/api/v1/users/set_password/", payload)
+
+        assert response.status_code == expected_status_code
+
+        if expected_status_code == HTTPStatus.NO_CONTENT:
+            user.refresh_from_db()
+            assert user.check_password(payload["new_password"]), "Пароль не изменен"
