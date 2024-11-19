@@ -11,7 +11,7 @@ from core.models import UUIDPrimaryKeyMixin
 
 
 class CustomUserManager(BaseUserManager):
-    """Менеджер создания пользователей."""
+    """Менеджер пользователей."""
 
     def create_user(self, email, password=None, **extra_fields):
         """Создание обычного пользователя."""
