@@ -60,6 +60,24 @@ def user_one_password(user_one: User, faker: Faker) -> str:
 
 
 @pytest.fixture
+def user_two_password(user_two: User, faker: Faker) -> str:
+    """Пароль второго пользователя."""
+    password = faker.password()
+    user_two.set_password(password)
+    user_two.save()
+    return password
+
+
+@pytest.fixture
+def superuser_password(superuser: User, faker: Faker) -> str:
+    """Пароль суперпользователя."""
+    password = faker.password()
+    superuser.set_password(password)
+    superuser.save()
+    return password
+
+
+@pytest.fixture
 def superuser(user_model: Type[User], faker: Faker) -> User:
     """Фикстура суперпользователя."""
     password = faker.password()

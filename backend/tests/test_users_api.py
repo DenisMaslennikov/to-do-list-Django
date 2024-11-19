@@ -1,5 +1,6 @@
 from http import HTTPStatus
 import random
+from pprint import pprint
 
 import pytest
 from faker.proxy import Faker
@@ -150,3 +151,28 @@ class TestUsersApi:
                 assert payload["last_name"] == user.last_name, "Фамилия пользователя не совпадает"
             if "middle_name" in payload:
                 assert payload["middle_name"] == user.middle_name, "Отчество пользователя не совпадает"
+
+    @pytest.mark.parametrize(
+        ("client", "expected_status_code", "user", "password"),
+        [
+            (lf("anonymous_client"), HTTPStatus.UNAUTHORIZED, lf("user_one"), lf("user_one_password")),
+            (lf("user_one_client"), HTTPStatus.NO_CONTENT, lf("user_one"), lf("user_one_password")),
+            (lf("user_one_client"), HTTPStatus.FORBIDDEN, lf("user_two"), lf("user_one_password")),
+            (lf("superuser_client"), HTTPStatus.NO_CONTENT, lf("user_one"), lf("superuser_password")),
+        ],
+    )
+    def test_delete_user_by_id(self, client: APIClient, expected_status_code: int, user: User, password: str) -> None:
+        """Удаление пользователя по id."""
+
+        payload = {"current_password": password}
+
+        response = client.delete(f"/api/v1/users/{user.id}/", payload)
+
+        if expected_status_code != HTTPStatus.NO_CONTENT:
+            pprint(response.json())
+
+        assert response.status_code == expected_status_code
+
+        if expected_status_code == HTTPStatus.NO_CONTENT:
+            user_from_db = User.objects.filter(id=user.id).first()
+            assert user_from_db is None, "Пользователь не удален из базы данных"
