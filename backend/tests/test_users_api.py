@@ -1,4 +1,5 @@
 from http import HTTPStatus
+import random
 
 import pytest
 from faker.proxy import Faker
@@ -103,10 +104,49 @@ class TestUsersApi:
 
         assert response.status_code == expected_status_code, "Код ответа отличается от ожидаемого"
         if expected_status_code == HTTPStatus.OK:
-            json = response.json()
             user.refresh_from_db()
             assert payload["username"] == user.username, "Username пользователя не совпадает"
             assert payload["email"] == user.email, "Email пользователя не совпадает"
             assert payload["first_name"] == user.first_name, "Имя пользователя не совпадает"
             assert payload["last_name"] == user.last_name, "Фамилия пользователя не совпадает"
             assert payload["middle_name"] == user.middle_name, "Отчество пользователя не совпадает"
+
+    @pytest.mark.parametrize(
+        ("client", "expected_status_code", "user"),
+        [
+            (lf("anonymous_client"), HTTPStatus.UNAUTHORIZED, lf("user_one")),
+            (lf("user_one_client"), HTTPStatus.OK, lf("user_one")),
+            (lf("user_one_client"), HTTPStatus.NOT_FOUND, lf("user_two")),
+            (lf("superuser_client"), HTTPStatus.OK, lf("user_one")),
+        ],
+    )
+    def test_partial_update_user_by_id(
+        self, client: APIClient, expected_status_code: int, user: User, faker: Faker
+    ) -> None:
+        """Частичное обновление информации о пользователе."""
+        payload = {
+            "username": faker.unique.user_name(),
+            "email": faker.unique.email(),
+            "password": faker.password(),
+            "first_name": faker.first_name(),
+            "last_name": faker.last_name(),
+            "middle_name": faker.middle_name(),
+        }
+        key = random.choice(list(payload.keys()))
+        payload.pop(key)
+
+        response = client.patch(f"/api/v1/users/{user.id}/", payload)
+
+        assert response.status_code == expected_status_code, "Код ответа отличается от ожидаемого"
+        if expected_status_code == HTTPStatus.OK:
+            user.refresh_from_db()
+            if "username" in payload:
+                assert payload["username"] == user.username, "Username пользователя не совпадает"
+            if "email" in payload:
+                assert payload["email"] == user.email, "Email пользователя не совпадает"
+            if "first_name" in payload:
+                assert payload["first_name"] == user.first_name, "Имя пользователя не совпадает"
+            if "last_name" in payload:
+                assert payload["last_name"] == user.last_name, "Фамилия пользователя не совпадает"
+            if "middle_name" in payload:
+                assert payload["middle_name"] == user.middle_name, "Отчество пользователя не совпадает"
