@@ -9,6 +9,7 @@ class CustomUserSerializer(UserSerializer):
     """Сериализатор пользователя."""
 
     last_login = serializers.DateTimeField(read_only=True)
+    is_active = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = User
