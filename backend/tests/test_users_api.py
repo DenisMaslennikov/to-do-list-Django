@@ -77,3 +77,25 @@ class TestUsersApi:
             assert json["first_name"] == user.first_name, "Имя пользователя не совпадает"
             assert json["last_name"] == user.last_name, "Фамилия пользователя не совпадает"
             assert json["middle_name"] == user.middle_name, "Отчество пользователя не совпадает"
+
+    @pytest.mark.parametrize(
+        ("client", "expected_status_code", "user"),
+        [
+            (lf("anonymous_client"), HTTPStatus.UNAUTHORIZED, lf("user_one")),
+            (lf("user_one_client"), HTTPStatus.NOT_FOUND, lf("user_two")),
+            (lf("superuser_client"), HTTPStatus.OK, lf("user_one")),
+        ],
+    )
+    def test_get_user_by_id_another_user_id(self, client: APIClient, expected_status_code: int, user: User) -> None:
+        """Проверяет получение пользователем по id самого себя."""
+        response = client.get(f"/api/v1/users/{user.id}/")
+
+        assert response.status_code == expected_status_code, "Код ответа отличается от ожидаемого"
+        if expected_status_code == HTTPStatus.OK:
+            json = response.json()
+            assert json["id"] == str(user.id), "Идентификатор пользователя не совпадает"
+            assert json["username"] == user.username, "Username пользователя не совпадает"
+            assert json["email"] == user.email, "Email пользователя не совпадает"
+            assert json["first_name"] == user.first_name, "Имя пользователя не совпадает"
+            assert json["last_name"] == user.last_name, "Фамилия пользователя не совпадает"
+            assert json["middle_name"] == user.middle_name, "Отчество пользователя не совпадает"
