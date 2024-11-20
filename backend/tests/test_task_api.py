@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from http import HTTPStatus
 import random
 
@@ -34,13 +35,13 @@ class TestTaskApi:
             assert len(json) == user.tasks.count()
 
     @pytest.mark.parametrize(
-        ("client", "expected_status_code"),
+        ("client", "expected_status_code", "user"),
         [
-            (lf("anonymous_client"), HTTPStatus.UNAUTHORIZED),
-            (lf("user_one_client"), HTTPStatus.CREATED),
+            (lf("anonymous_client"), HTTPStatus.UNAUTHORIZED, None),
+            (lf("user_one_client"), HTTPStatus.CREATED, lf("user_one")),
         ],
     )
-    def test_add_task(self, client: APIClient, expected_status_code: int, faker: Faker) -> None:
+    def test_add_task(self, client: APIClient, expected_status_code: int, user: User, faker: Faker) -> None:
         """Проверяет создание задачи."""
         tasks_status: list[TaskStatus] = TaskStatus.objects.all()
         task_status = random.choice(tasks_status)
@@ -65,3 +66,25 @@ class TestTaskApi:
 
         if expected_status_code == HTTPStatus.CREATED:
             assert Task.objects.count() == 1, "Количество задач в базе отличается от ожидаемого"
+            task_from_bd: Task = Task.objects.all().first()
+            assert task_from_bd.user == user, "Пользователь создавший задачу не соответствует ожидаемому"
+            assert task_from_bd.title == payload["title"], "Заголовок задачи не соответствует переданному"
+            assert task_from_bd.description == payload["description"], "Описание задачи не соответствует переданному"
+            assert task_from_bd.task_status == task_status, "Статус задачи не соответствует переданному"
+            if completed_at is not None:
+                assert (
+                    task_from_bd.completed_at.timestamp() == completed_at.timestamp()
+                ), "Время выполнения задачи не соответствует переданному"
+            if complete_before is not None:
+                assert (
+                    task_from_bd.complete_before.timestamp() == complete_before.timestamp()
+                ), "Время выполнить до не соответствует переданному"
+            assert (
+                task_from_bd.updated_at.timestamp() < datetime.now().timestamp()
+                and task_from_bd.updated_at.timestamp() > (datetime.now() - timedelta(seconds=1)).timestamp()
+            ), "Время последнего изменения задачи не соответствует ожидаемому"
+
+            assert (
+                task_from_bd.created_at.timestamp() < datetime.now().timestamp()
+                and task_from_bd.created_at.timestamp() > (datetime.now() - timedelta(seconds=1)).timestamp()
+            ), "Время создание задачи не соответствует ожидаемому"
