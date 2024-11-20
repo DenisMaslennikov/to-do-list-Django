@@ -4,9 +4,13 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.db.models import Model
 from faker import Faker
+from faker.generator import random
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken, Token
 
+from classifiers.models import TaskStatus
+from tasks.models import Task
+from tests.constants import COMPLETED_TASK_STATUS_ID
 from users.models import User
 
 
@@ -146,7 +150,7 @@ def superuser_client(superuser_access_token) -> APIClient:
 
 
 @pytest.fixture
-def some_users(user_model: Type[User], faker: Faker) -> list[User]:
+def users(user_model: Type[User], faker: Faker) -> list[User]:
     """Создает несколько пользователей."""
     users = [
         user_model.objects.create_user(
@@ -160,3 +164,32 @@ def some_users(user_model: Type[User], faker: Faker) -> list[User]:
         for _ in range(faker.random_int(5, 25))
     ]
     return users
+
+
+@pytest.fixture
+def user_one_tasks(user_one: User, faker: Faker) -> list[Task]:
+    """Создает несколько задач."""
+    tasks_status: list[TaskStatus] = TaskStatus.objects.all()
+
+    tasks = []
+    for _ in range(faker.random_int(5, 25)):
+        completed_at = None
+        complete_before = None
+        if faker.random_int(1, 100) < 50:
+            complete_before = faker.date_time()
+        task_status = random.choice(tasks_status)
+        if task_status.id == COMPLETED_TASK_STATUS_ID:
+            completed_at = faker.date_time()
+
+        task = Task(
+            title=faker.text(max_nb_chars=100),
+            description=faker.text(max_nb_chars=500),
+            task_status=task_status,
+            user=user_one,
+            completed_at=completed_at,
+            complete_before=complete_before,
+        )
+        tasks.append(task)
+
+    Task.objects.bulk_create(tasks)
+    return tasks

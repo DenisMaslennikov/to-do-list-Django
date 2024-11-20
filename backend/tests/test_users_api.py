@@ -23,7 +23,7 @@ class TestUsersApi:
             (lf("superuser_client"), HTTPStatus.OK, lf("superuser")),
         ],
     )
-    @pytest.mark.usefixtures("some_users")
+    @pytest.mark.usefixtures("users")
     def test_get_users_list(self, client: APIClient, expected_status_code: int, user: User | None) -> None:
         """Проверяет получение списка пользователей различными пользователями."""
         response = client.get("/api/v1/users/")
