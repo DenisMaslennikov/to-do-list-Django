@@ -22,7 +22,8 @@ docker compose up --build
 ```bash 
 git clone https://github.com/DenisMaslennikov/to-do-list-Django.git
 ```
-- Настроить переменные окружения в папке **config** в файле **.env** используя в качестве шаблона файл **.env.template** в той же папке.
+- Настроить переменные окружения в папке **config** в файле **.env** используя в качестве шаблона файл **.env.template** в той же папке
+- Запустить тесты
 ```bash
 docker compose run --build --rm api pytest
 ```
