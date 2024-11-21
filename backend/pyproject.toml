@@ -193,5 +193,5 @@ target-version = ["py312"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "to_do_list.settings"
-addopts = "-vv --disable-warnings"
+addopts = "-vv"
 python_files = "test_*.py"

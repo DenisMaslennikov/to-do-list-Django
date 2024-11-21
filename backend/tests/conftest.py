@@ -1,8 +1,8 @@
+from datetime import timezone
 from typing import Type
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.db.models import Model
 from faker import Faker
 from faker.generator import random
 from rest_framework.test import APIClient
@@ -168,7 +168,7 @@ def users(user_model: Type[User], faker: Faker) -> list[User]:
 
 @pytest.fixture
 def user_one_tasks(user_one: User, faker: Faker) -> list[Task]:
-    """Создает несколько задач."""
+    """Создает несколько задач для первого пользователя."""
     tasks_status: list[TaskStatus] = TaskStatus.objects.all()
 
     tasks = []
@@ -176,10 +176,10 @@ def user_one_tasks(user_one: User, faker: Faker) -> list[Task]:
         completed_at = None
         complete_before = None
         if faker.random_int(1, 100) < 50:
-            complete_before = faker.date_time()
+            complete_before = faker.date_time(tzinfo=timezone.utc)
         task_status = random.choice(tasks_status)
         if task_status.id == COMPLETED_TASK_STATUS_ID:
-            completed_at = faker.date_time()
+            completed_at = faker.date_time(tzinfo=timezone.utc)
 
         task = Task(
             title=faker.text(max_nb_chars=100),
@@ -193,3 +193,27 @@ def user_one_tasks(user_one: User, faker: Faker) -> list[Task]:
 
     Task.objects.bulk_create(tasks)
     return tasks
+
+
+@pytest.fixture
+def user_one_task(user_one: User, faker: Faker) -> Task:
+    """Задача первого пользователя."""
+    tasks_status: list[TaskStatus] = TaskStatus.objects.all()
+
+    completed_at = None
+    complete_before = None
+    if faker.random_int(1, 100) < 50:
+        complete_before = faker.date_time(tzinfo=timezone.utc)
+    task_status = random.choice(tasks_status)
+    if task_status.id == COMPLETED_TASK_STATUS_ID:
+        completed_at = faker.date_time(tzinfo=timezone.utc)
+
+    task = Task.objects.create(
+        title=faker.text(max_nb_chars=100),
+        description=faker.text(max_nb_chars=500),
+        task_status=task_status,
+        user=user_one,
+        completed_at=completed_at,
+        complete_before=complete_before,
+    )
+    return task

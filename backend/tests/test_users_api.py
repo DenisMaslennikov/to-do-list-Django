@@ -1,10 +1,8 @@
-from http import HTTPStatus
 import random
-from tkinter.constants import NORMAL
+from http import HTTPStatus
 
 import pytest
 from faker.proxy import Faker
-
 from pytest_lazy_fixtures import lf
 from rest_framework.test import APIClient
 
@@ -161,7 +159,6 @@ class TestUsersApi:
     )
     def test_delete_user_by_id(self, client: APIClient, expected_status_code: int, user: User, password: str) -> None:
         """Удаление пользователя по id."""
-
         payload = {"current_password": password}
 
         response = client.delete(f"/api/v1/users/{user.id}/", payload)
@@ -181,7 +178,7 @@ class TestUsersApi:
     )
     def test_get_user_me(self, client: APIClient, expected_status_code: int, user: User | None) -> None:
         """Проверяет получение информации о текущем пользователе."""
-        response = client.get(f"/api/v1/users/me/")
+        response = client.get("/api/v1/users/me/")
 
         assert response.status_code == expected_status_code, "Код ответа отличается от ожидаемого"
         if expected_status_code == HTTPStatus.OK:
@@ -212,7 +209,7 @@ class TestUsersApi:
             "middle_name": faker.middle_name(),
         }
 
-        response = client.put(f"/api/v1/users/me/", payload)
+        response = client.put("/api/v1/users/me/", payload)
 
         assert response.status_code == expected_status_code, "Код ответа отличается от ожидаемого"
         if expected_status_code == HTTPStatus.OK:
@@ -244,7 +241,7 @@ class TestUsersApi:
         key = random.choice(list(payload.keys()))
         payload.pop(key)
 
-        response = client.patch(f"/api/v1/users/me/", payload)
+        response = client.patch("/api/v1/users/me/", payload)
 
         assert response.status_code == expected_status_code, "Код ответа отличается от ожидаемого"
         if expected_status_code == HTTPStatus.OK:
@@ -271,10 +268,9 @@ class TestUsersApi:
         self, client: APIClient, expected_status_code: int, user: User | None, password: str
     ) -> None:
         """Удаление текущего пользователя."""
-
         payload = {"current_password": password}
 
-        response = client.delete(f"/api/v1/users/me/", payload)
+        response = client.delete("/api/v1/users/me/", payload)
 
         assert response.status_code == expected_status_code
 
@@ -293,13 +289,12 @@ class TestUsersApi:
         self, client: APIClient, expected_status_code: int, user: User | None, password: str, faker: Faker
     ) -> None:
         """Изменение пароля текущего пользователя."""
-
         payload = {
             "current_password": password,
             "new_password": faker.password(),
         }
 
-        response = client.post(f"/api/v1/users/set_password/", payload)
+        response = client.post("/api/v1/users/set_password/", payload)
 
         assert response.status_code == expected_status_code
 

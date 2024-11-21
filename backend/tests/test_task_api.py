@@ -1,6 +1,6 @@
+import random
 from datetime import datetime, timedelta
 from http import HTTPStatus
-import random
 
 import pytest
 from faker import Faker
@@ -8,8 +8,9 @@ from pytest_lazy_fixtures import lf
 from rest_framework.test import APIClient
 
 from classifiers.models import TaskStatus
-from tasks.models import User, Task
+from tasks.models import Task, User
 from tests.constants import COMPLETED_TASK_STATUS_ID
+from tests.functions import date_format, date_from_iso_str
 
 
 @pytest.mark.django_db
@@ -88,3 +89,33 @@ class TestTaskApi:
                 task_from_bd.created_at.timestamp() < datetime.now().timestamp()
                 and task_from_bd.created_at.timestamp() > (datetime.now() - timedelta(seconds=1)).timestamp()
             ), "Время создание задачи не соответствует ожидаемому"
+
+    @pytest.mark.parametrize(
+        ("client", "expected_status_code"),
+        [
+            (lf("anonymous_client"), HTTPStatus.UNAUTHORIZED),
+            (lf("user_one_client"), HTTPStatus.OK),
+            (lf("user_two_client"), HTTPStatus.NOT_FOUND),
+        ],
+    )
+    def test_get_task_by_id(self, client: APIClient, expected_status_code: int, user_one_task: Task) -> None:
+        """Проверяет получение задачи по id."""
+        response = client.get(f"/api/v1/tasks/{user_one_task.id}/")
+        assert response.status_code == expected_status_code
+        if expected_status_code == HTTPStatus.OK:
+            json = response.json()
+            assert json["title"] == user_one_task.title, "Заголовок задачи не совпадает"
+            assert json["description"] == user_one_task.description, "Описание задачи не совпадает"
+            assert json["task_status"]["id"] == user_one_task.task_status.id, "Статус задачи не совпадает"
+            model_created_at = date_format(user_one_task.created_at)
+            api_created_at = date_from_iso_str(json["created_at"])
+            assert api_created_at == model_created_at, "Время создание задачи не совпадает"
+            model_updated_at = date_format(user_one_task.updated_at)
+            api_updated_at = date_from_iso_str(json["updated_at"])
+            assert api_updated_at == model_updated_at, "Время обновления задачи не совпадает"
+            model_complete_before = date_format(user_one_task.complete_before)
+            api_complete_before = date_from_iso_str(json["complete_before"])
+            assert api_complete_before == model_complete_before, "Время завершить до не совпадает"
+            model_completed_at = date_format(user_one_task.completed_at)
+            api_completed_at = date_from_iso_str(json["completed_at"])
+            assert api_completed_at == model_completed_at, "Время завершения задачи не совпадает"

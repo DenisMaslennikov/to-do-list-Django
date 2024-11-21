@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
-from rest_framework import serializers
 from djoser.serializers import UserSerializer
+from rest_framework import serializers
 
 User = get_user_model()
 
@@ -12,6 +12,8 @@ class CustomUserSerializer(UserSerializer):
     is_active = serializers.BooleanField(read_only=True)
 
     class Meta:
+        """Метакласс сериализатора пользователя."""
+
         model = User
         fields = (
             "id",
