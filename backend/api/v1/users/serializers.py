@@ -10,6 +10,7 @@ class CustomUserSerializer(UserSerializer):
 
     last_login = serializers.DateTimeField(read_only=True)
     is_active = serializers.BooleanField(read_only=True)
+    password = serializers.CharField(write_only=True, required=False)
 
     class Meta:
         """Метакласс сериализатора пользователя."""
@@ -24,4 +25,5 @@ class CustomUserSerializer(UserSerializer):
             "middle_name",
             "is_active",
             "last_login",
+            "password",
         )
