@@ -4,6 +4,7 @@ from http import HTTPStatus
 from http.client import responses
 
 import pytest
+from django.db.models.functions import Random
 from faker import Faker
 from pytest_lazy_fixtures import lf
 from rest_framework.test import APIClient
@@ -258,12 +259,30 @@ class TestTaskApi:
             (lf("user_two_client"), HTTPStatus.NOT_FOUND),
         ],
     )
-    def test_delete_task_by_id(
-        self, client: APIClient, expected_status_code: int, user_one_task: Task, faker: Faker
-    ) -> None:
+    def test_delete_task_by_id(self, client: APIClient, expected_status_code: int, user_one_task: Task) -> None:
         """Удаление задачи по id."""
         response = client.delete(f"/api/v1/tasks/{user_one_task.id}/")
         assert response.status_code == expected_status_code
         if expected_status_code == HTTPStatus.NO_CONTENT:
             task_from_bd = Task.objects.filter(id=user_one_task.id).first()
             assert task_from_bd is None, "Задача не была удалена из бд"
+
+    @pytest.mark.parametrize(
+        ("client", "expected_status_code"),
+        [
+            (lf("anonymous_client"), HTTPStatus.UNAUTHORIZED),
+            (lf("user_one_client"), HTTPStatus.OK),
+            (lf("user_two_client"), HTTPStatus.NOT_FOUND),
+        ],
+    )
+    def test_update_task_status(self, client: APIClient, expected_status_code: int, user_one_task: Task) -> None:
+        """Обновление статуса задачи."""
+        task_status = TaskStatus.objects.exclude(id=user_one_task.task_status.id).order_by(Random()).first()
+        payload = {
+            "task_status": task_status.id,
+        }
+        response = client.patch(f"/api/v1/tasks/{user_one_task.id}/change_status/", data=payload)
+        assert response.status_code == expected_status_code
+        if expected_status_code == HTTPStatus.OK:
+            user_one_task.refresh_from_db()
+            assert user_one_task.task_status.id == payload["task_status"], "Статус задачи не был изменен"
