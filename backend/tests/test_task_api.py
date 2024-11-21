@@ -1,6 +1,7 @@
 import random
 from datetime import datetime, timedelta
 from http import HTTPStatus
+from http.client import responses
 
 import pytest
 from faker import Faker
@@ -161,7 +162,6 @@ class TestTaskApi:
             assert user_one_task.title == payload["title"], "Заголовок задачи не совпадает"
             assert user_one_task.description == payload["description"], "Описание задачи не совпадает"
             assert user_one_task.task_status.id == payload["task_status"], "Статус задачи не совпадает"
-            print(completed_at, complete_before)
             if completed_at is not None:
                 assert (
                     user_one_task.completed_at.timestamp() == completed_at.timestamp()
@@ -174,3 +174,96 @@ class TestTaskApi:
                 ), "Время выполнить до не совпадает"
             else:
                 assert user_one_task.complete_before is None, "Время выполнить до не совпадает"
+
+    @pytest.mark.parametrize(
+        ("client", "expected_status_code"),
+        [
+            (lf("anonymous_client"), HTTPStatus.UNAUTHORIZED),
+            (lf("user_one_client"), HTTPStatus.OK),
+            (lf("user_two_client"), HTTPStatus.NOT_FOUND),
+        ],
+    )
+    def test_partial_update_task_by_id(
+        self, client: APIClient, expected_status_code: int, user_one_task: Task, faker: Faker
+    ) -> None:
+        """Проверка обновления задачи по id."""
+        tasks_status: list[TaskStatus] = TaskStatus.objects.all()
+        task_status = random.choice(tasks_status)
+        completed_at = None
+        complete_before = None
+        if task_status.id == COMPLETED_TASK_STATUS_ID:
+            completed_at = faker.date_time()
+        if faker.boolean(75):
+            complete_before = faker.date_time()
+        payload = {
+            "title": faker.text(max_nb_chars=50),
+            "description": faker.text(max_nb_chars=500),
+            "task_status": task_status.id,
+        }
+        if completed_at is not None:
+            payload["completed_at"] = completed_at
+        else:
+            payload["completed_at"] = ""
+        if complete_before is not None:
+            payload["complete_before"] = complete_before
+        else:
+            payload["complete_before"] = ""
+
+        key = random.choice(list(payload.keys()))
+        payload.pop(key)
+        old_value = getattr(user_one_task, key)
+
+        response = client.patch(f"/api/v1/tasks/{user_one_task.id}/", data=payload)
+        assert response.status_code == expected_status_code
+        if expected_status_code == HTTPStatus.OK:
+            user_one_task.refresh_from_db()
+            if "title" in payload:
+                assert user_one_task.title == payload["title"], "Заголовок задачи не совпадает"
+            else:
+                assert user_one_task.title == old_value, "Заголовок был изменен хотя не передавался"
+            if "description" in payload:
+                assert user_one_task.description == payload["description"], "Описание задачи не совпадает"
+            else:
+                assert user_one_task.description == old_value, "Описание задачи было изменено хотя не передавалось"
+            if "task_status" in payload:
+                assert user_one_task.task_status.id == payload["task_status"], "Статус задачи не совпадает"
+            else:
+                assert user_one_task.task_status == old_value, "Статус задачи был изменен хотя не передавался"
+            if "completed_at" in payload:
+                if completed_at is not None:
+                    assert (
+                        user_one_task.completed_at.timestamp() == completed_at.timestamp()
+                    ), "Время завершения не совпадает"
+                else:
+                    assert user_one_task.completed_at is None, "Время завершения не совпадает"
+            else:
+                assert user_one_task.completed_at == old_value, "Время выполнение было изменено хотя не передавалось"
+            if "complete_before" in payload:
+                if complete_before is not None:
+                    assert (
+                        user_one_task.complete_before.timestamp() == complete_before.timestamp()
+                    ), "Время выполнить до не совпадает"
+                else:
+                    assert user_one_task.complete_before is None, "Время выполнить до не совпадает"
+            else:
+                assert (
+                    user_one_task.complete_before == old_value
+                ), "Время выполнить до было изменено хотя не передавалось"
+
+    @pytest.mark.parametrize(
+        ("client", "expected_status_code"),
+        [
+            (lf("anonymous_client"), HTTPStatus.UNAUTHORIZED),
+            (lf("user_one_client"), HTTPStatus.NO_CONTENT),
+            (lf("user_two_client"), HTTPStatus.NOT_FOUND),
+        ],
+    )
+    def test_delete_task_by_id(
+        self, client: APIClient, expected_status_code: int, user_one_task: Task, faker: Faker
+    ) -> None:
+        """Удаление задачи по id."""
+        response = client.delete(f"/api/v1/tasks/{user_one_task.id}/")
+        assert response.status_code == expected_status_code
+        if expected_status_code == HTTPStatus.NO_CONTENT:
+            task_from_bd = Task.objects.filter(id=user_one_task.id).first()
+            assert task_from_bd is None, "Задача не была удалена из бд"
